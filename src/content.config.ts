@@ -17,4 +17,15 @@ const entries = defineCollection({
   }),
 });
 
-export const collections = { entries };
+const flashcards = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/flashcards' }),
+  schema: z.object({
+    deck: z.string(),
+    front: z.string(),
+    back: z.string(),
+    tags: z.array(z.string()).optional(),
+    difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
+  }),
+});
+
+export const collections = { entries, flashcards };

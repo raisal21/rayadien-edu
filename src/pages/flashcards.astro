@@ -1,0 +1,566 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const allCards = await getCollection('flashcards');
+const decks = [...new Set(allCards.map(c => c.data.deck))];
+---
+
+<BaseLayout title="Flashcards - Rayadien Edu">
+  <div class="flash-page">
+    <header class="flash-header">
+      <a href="/" class="back-link">&larr; Kembali</a>
+      <h1>Flashcards</h1>
+      <p class="subtitle">Belajar dengan kartu interaktif</p>
+    </header>
+
+    <div class="flash-toolbar">
+      <div class="deck-selector">
+        <label for="deck">Deck:</label>
+        <select id="deck">
+          {decks.map(deck => (
+            <option value={deck}>{deck}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+
+    <div class="card-stage" id="card-stage">
+      <div class="card-stack" id="card-stack"></div>
+    </div>
+
+    <div class="controls">
+      <button id="prev-btn" class="nav-btn" disabled aria-label="Kartu sebelumnya">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="card-counter">
+        <span id="current">1</span> / <span id="total">0</span>
+      </div>
+      <button id="next-btn" class="nav-btn" aria-label="Kartu selanjutnya">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="kbd-hints">
+      <kbd>&larr;</kbd><kbd>&rarr;</kbd> navigasi
+      <span class="sep">&middot;</span>
+      <kbd>Space</kbd> flip
+    </div>
+  </div>
+
+  <script is:inline id="flashcards-data" type="application/json" set:html={JSON.stringify(allCards)} />
+
+  <script>
+    import '../scripts/flashcards.ts';
+  </script>
+</BaseLayout>
+
+<style is:global>
+  /* ── Page Shell ── */
+  .flash-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1.5rem;
+    background: linear-gradient(180deg, #f6f1e9 0%, #efe8dc 100%);
+    color: #2a2520;
+  }
+
+  /* ── Header ── */
+  .flash-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    color: #8a8070;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+
+  .back-link:hover { color: #2a2520; }
+
+  .flash-header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2a2520;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    color: #8a8070;
+    margin: 0.25rem 0 0;
+    font-size: 0.95rem;
+  }
+
+  /* ── Toolbar ── */
+  .flash-toolbar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .deck-selector {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .deck-selector label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #8a8070;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .deck-selector select {
+    padding: 0.4rem 0.75rem;
+    background: #faf6ee;
+    color: #2a2520;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: 'Mulish', sans-serif;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .deck-selector select:focus {
+    border-color: #b8963e;
+  }
+
+  /* ── Card Stage ── */
+  .card-stage {
+    position: relative;
+    width: 380px;
+    height: 532px;
+    margin: 1rem 0 1.5rem;
+    perspective: 1600px;
+  }
+
+  .card-stack {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Card ── */
+  .card {
+    --ptr-x: 0;
+    --ptr-y: 0;
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    will-change: transform;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .card[data-depth="0"] {
+    z-index: 3;
+    opacity: 1;
+    transform:
+      scale(1) translateY(0)
+      rotateX(calc(var(--ptr-y) * 12deg))
+      rotateY(calc(var(--ptr-x) * -12deg));
+    transition:
+      transform 0.5s cubic-bezier(0.2, 0, 0.2, 1),
+      opacity 0.4s ease;
+  }
+
+  .card[data-depth="0"].tilt {
+    transition: transform 0.05s linear;
+  }
+
+  .card[data-depth="0"]:not(:hover) {
+    transition:
+      transform 0.5s cubic-bezier(0.2, 0, 0.2, 1),
+      opacity 0.4s ease;
+  }
+
+  .card[data-depth="1"] {
+    transform: scale(0.94) translateY(12px);
+    opacity: 0.55;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .card[data-depth="2"] {
+    transform: scale(0.88) translateY(24px);
+    opacity: 0.25;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* ── Card Inner (3D flip container) ── */
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card.flipped .card-inner {
+    transform: rotateY(180deg);
+  }
+
+  /* ── Card Faces ── */
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 24px;
+    border: 1px solid rgba(180, 155, 90, 0.25);
+    box-shadow: 0 4px 24px rgba(120, 100, 60, 0.1), 0 1px 4px rgba(120, 100, 60, 0.06);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-front {
+    background: linear-gradient(180deg, #fffdf8 0%, #faf6ee 100%);
+  }
+
+  .card-back {
+    background: linear-gradient(180deg, #f0ebe0 0%, #e8e2d6 100%);
+    transform: rotateY(180deg) translate3d(0, 0, 1px);
+  }
+
+  /* ── Spotlight ── */
+  .spotlight {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 24px;
+    overflow: hidden;
+  }
+
+  .spotlight::before {
+    content: '';
+    position: absolute;
+    width: 350%;
+    aspect-ratio: 1;
+    left: 50%;
+    top: 50%;
+    background: radial-gradient(
+      rgba(200, 170, 80, 0.25) 0 3%,
+      transparent 30%
+    );
+    translate: calc(-50% + var(--ptr-x, 0) * 25%)
+               calc(-50% + var(--ptr-y, 0) * 25%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    mix-blend-mode: overlay;
+  }
+
+  .card:hover .spotlight::before {
+    opacity: 1;
+  }
+
+  /* ── Card Content ── */
+  .card-label {
+    padding: 1.25rem 1.5rem 0;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-label .label-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .card-front .card-label {
+    font-size: 0.8rem;
+    color: #b8963e;
+  }
+
+  .card-front .label-icon {
+    background: rgba(184, 150, 62, 0.12);
+    color: #b8963e;
+    border: 1px solid rgba(180, 155, 90, 0.25);
+    font-size: 0.75rem;
+  }
+
+  .card-back .card-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: #9a8a6a;
+  }
+
+  .card-back .label-icon {
+    background: rgba(128, 128, 128, 0.1);
+    color: #8a7a5a;
+    border: 1px solid rgba(180, 155, 90, 0.15);
+    font-size: 0.65rem;
+  }
+
+  .card-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card-front .card-content {
+    font-size: 1.3rem;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  .card-back .card-content {
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  .card-content {
+    color: #2a2520;
+    text-align: center;
+    max-width: 100%;
+    overflow-y: auto;
+  }
+
+  .card-content strong {
+    color: #b8963e;
+    font-weight: 700;
+  }
+
+  .card-back .card-content strong {
+    color: #8a7a5a;
+  }
+
+  .card-content em {
+    font-style: italic;
+    opacity: 0.9;
+  }
+
+  .card-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+    text-align: left;
+  }
+
+  .card-content li {
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    position: relative;
+  }
+
+  .card-content li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.65rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #b8963e;
+    opacity: 0.6;
+  }
+
+  .card-back .card-content li::before {
+    background: #8a7a5a;
+  }
+
+  .card-content p {
+    margin: 0.4rem 0;
+  }
+
+  .card-content p:first-child { margin-top: 0; }
+  .card-content p:last-child { margin-bottom: 0; }
+
+  /* ── Back Watermark ── */
+  .card-back .card-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    font-size: 8rem;
+    font-weight: 800;
+    color: #8a7a5a;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 1;
+    line-height: 1;
+    user-select: none;
+  }
+
+  /* ── Card Accent Bars ── */
+  .card-front::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #b8963e;
+    opacity: 0.6;
+    z-index: 2;
+  }
+
+  .card-back::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1.5px;
+    background: #8a7a5a;
+    opacity: 0.45;
+    z-index: 2;
+  }
+
+  /* ── Slide Animation ── */
+  .card.slide-out-left {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 1, 1), opacity 0.25s ease;
+    transform: translateX(-120%) rotate(-8deg) !important;
+    opacity: 0 !important;
+  }
+
+  .card.slide-out-right {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 1, 1), opacity 0.25s ease;
+    transform: translateX(120%) rotate(8deg) !important;
+    opacity: 0 !important;
+  }
+
+  .card.slide-in-right {
+    animation: slideInRight 0.35s cubic-bezier(0, 0, 0.2, 1) forwards;
+  }
+
+  .card.slide-in-left {
+    animation: slideInLeft 0.35s cubic-bezier(0, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes slideInRight {
+    from { transform: translateX(80%) rotate(5deg); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  @keyframes slideInLeft {
+    from { transform: translateX(-80%) rotate(-5deg); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    color: #2a2520;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .nav-btn:hover:not(:disabled) {
+    border-color: #b8963e;
+    background: rgba(184, 150, 62, 0.12);
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .card-counter {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2a2520;
+    font-variant-numeric: tabular-nums;
+    min-width: 4rem;
+    text-align: center;
+  }
+
+  /* ── Keyboard Hints ── */
+  .kbd-hints {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #8a8070;
+  }
+
+  .kbd-hints kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    background: rgba(0,0,0,0.05);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
+    font-family: 'Mulish', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #2a2520;
+  }
+
+  .sep { margin: 0 0.25rem; }
+
+  /* ── Responsive ── */
+  @media (max-width: 480px) {
+    .card-stage {
+      width: 300px;
+      height: 420px;
+    }
+
+    .flash-header h1 { font-size: 1.8rem; }
+
+    .card-front .card-content { font-size: 1.1rem; }
+    .card-back .card-content { font-size: 0.9rem; }
+    .card-label { padding: 1rem 1.25rem 0; }
+    .card-front .card-label { font-size: 0.7rem; }
+    .card-back .card-label { font-size: 0.6rem; }
+    .card-body { padding: 1rem 1.25rem; }
+    .card-back .card-watermark { font-size: 6rem; }
+
+    .controls { gap: 1rem; }
+    .kbd-hints { display: none; }
+  }
+</style>
