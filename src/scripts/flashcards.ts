@@ -1,184 +1,197 @@
+import gsap from 'gsap'
+
 interface Flashcard {
-  id: string;
+  id: string
   data: {
-    deck: string;
-    front: string;
-    back: string;
-    tags?: string[];
-    difficulty?: string;
-  };
+    deck: string
+    front: string
+    back: string
+    tags?: string[]
+    difficulty?: string
+  }
 }
 
-let allCards: Flashcard[] = [];
-let cards: Flashcard[] = [];
-let currentIndex = 0;
+let allCards: Flashcard[] = []
+let cards: Flashcard[] = []
+let currentIndex = 0
 
 function parseMd(text: string): string {
   let html = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
 
   html = html
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
 
-  const lines = html.split('\n');
-  const out: string[] = [];
-  let inList = false;
+  const lines = html.split('\n')
+  const out: string[] = []
+  let inList = false
 
   for (const line of lines) {
-    const trimmed = line.trim();
+    const trimmed = line.trim()
     if (/^[-*]\s/.test(trimmed)) {
-      if (!inList) { out.push('<ul>'); inList = true; }
-      out.push(`<li>${trimmed.replace(/^[-*]\s/, '')}</li>`);
+      if (!inList) { out.push('<ul>'); inList = true }
+      out.push(`<li>${trimmed.replace(/^[-*]\s/, '')}</li>`)
     } else {
-      if (inList) { out.push('</ul>'); inList = false; }
-      if (trimmed === '') continue;
-      out.push(`<p>${trimmed}</p>`);
+      if (inList) { out.push('</ul>'); inList = false }
+      if (trimmed === '') continue
+      out.push(`<p>${trimmed}</p>`)
     }
   }
-  if (inList) out.push('</ul>');
+  if (inList) out.push('</ul>')
+  return out.join('')
+}
 
-  return out.join('');
+function buildCardHTML(card: Flashcard): string {
+  return `
+    <div class="card-inner">
+      <div class="card-face card-front">
+        <div class="spotlight"></div>
+        <div class="card-label">
+          <span class="label-icon">?</span>
+          Pertanyaan
+        </div>
+        <div class="card-body">
+          <div class="card-content">${parseMd(card.data.front)}</div>
+        </div>
+      </div>
+      <div class="card-face card-back">
+        <div class="spotlight"></div>
+        <div class="card-watermark">&#10003;</div>
+        <div class="card-label">
+          <span class="label-icon">&#10003;</span>
+          Jawaban
+        </div>
+        <div class="card-body">
+          <div class="card-content">${parseMd(card.data.back)}</div>
+        </div>
+      </div>
+    </div>
+    <button class="card-flip-btn" aria-label="Flip kartu" aria-pressed="false"></button>
+  `
 }
 
 function renderStack(direction?: 'left' | 'right') {
-  const stack = document.getElementById('card-stack')!;
-  stack.innerHTML = '';
+  const stack = document.getElementById('card-stack')!
+  stack.innerHTML = ''
 
-  const visible = Math.min(3, cards.length - currentIndex);
+  const visible = Math.min(3, cards.length - currentIndex)
 
   for (let i = visible - 1; i >= 0; i--) {
-    const card = cards[currentIndex + i];
-    const el = document.createElement('div');
-    el.className = 'card';
-    el.dataset.depth = String(i);
-
-    if (i === 0 && direction) {
-      el.classList.add(direction === 'right' ? 'slide-in-right' : 'slide-in-left');
-    }
-
-    el.innerHTML = `
-      <div class="card-inner">
-        <div class="card-face card-front">
-          <div class="spotlight"></div>
-          <div class="card-label">
-            <span class="label-icon">?</span>
-            Pertanyaan
-          </div>
-          <div class="card-body">
-            <div class="card-content">${parseMd(card.data.front)}</div>
-          </div>
-        </div>
-        <div class="card-face card-back">
-          <div class="spotlight"></div>
-          <div class="card-watermark">&#10003;</div>
-          <div class="card-label">
-            <span class="label-icon">&#10003;</span>
-            Jawaban
-          </div>
-          <div class="card-body">
-            <div class="card-content">${parseMd(card.data.back)}</div>
-          </div>
-        </div>
-      </div>
-    `;
+    const card = cards[currentIndex + i]
+    const el = document.createElement('div')
+    el.className = 'card'
+    el.dataset.depth = String(i)
+    el.dataset.active = 'true'
+    el.innerHTML = buildCardHTML(card)
 
     if (i === 0) {
-      el.addEventListener('click', (e) => {
-        if (e.target === el || el.contains(e.target as Node)) {
-          el.classList.toggle('flipped');
-        }
-      });
-      initPointerTracking(el);
+      const btn = el.querySelector('.card-flip-btn') as HTMLButtonElement
+      btn.addEventListener('click', () => {
+        if (el.dataset.active === 'false') return
+        btn.ariaPressed = btn.matches('[aria-pressed="false"]') as any
+      })
+
+      gsap.from(el, {
+        x: direction === 'left' ? -60 : direction === 'right' ? 60 : 0,
+        opacity: 0,
+        scale: 0.92,
+        duration: 0.4,
+        ease: 'power2.out',
+        clearProps: 'transform,opacity',
+      })
     }
 
-    stack.appendChild(el);
+    stack.appendChild(el)
   }
 
-  document.getElementById('current')!.textContent = String(currentIndex + 1);
-  document.getElementById('total')!.textContent = String(cards.length);
-  updateNav();
-}
-
-function initPointerTracking(cardEl: HTMLElement) {
-  cardEl.addEventListener('pointermove', (e) => {
-    const rect = cardEl.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-    cardEl.style.setProperty('--ptr-x', Math.max(-1, Math.min(1, x)).toFixed(3));
-    cardEl.style.setProperty('--ptr-y', Math.max(-1, Math.min(1, y)).toFixed(3));
-    cardEl.classList.add('tilt');
-  });
-
-  cardEl.addEventListener('pointerleave', () => {
-    cardEl.style.setProperty('--ptr-x', '0');
-    cardEl.style.setProperty('--ptr-y', '0');
-    cardEl.classList.remove('tilt');
-  });
+  document.getElementById('current')!.textContent = String(currentIndex + 1)
+  document.getElementById('total')!.textContent = String(cards.length)
+  updateNav()
 }
 
 function updateNav() {
-  (document.getElementById('prev-btn') as HTMLButtonElement).disabled = currentIndex === 0;
-  (document.getElementById('next-btn') as HTMLButtonElement).disabled = currentIndex >= cards.length - 1;
+  const prev = document.getElementById('prev-btn')! as HTMLButtonElement
+  const next = document.getElementById('next-btn')! as HTMLButtonElement
+  prev.disabled = currentIndex === 0
+  next.disabled = currentIndex >= cards.length - 1
 }
 
 function goNext() {
-  if (currentIndex >= cards.length - 1) return;
-  const top = document.querySelector('.card[data-depth="0"]');
-  if (top) top.classList.add('slide-out-left');
-  currentIndex++;
-  setTimeout(() => renderStack('right'), 200);
+  if (currentIndex >= cards.length - 1) return
+  currentIndex++
+  renderStack('right')
 }
 
 function goPrev() {
-  if (currentIndex <= 0) return;
-  const top = document.querySelector('.card[data-depth="0"]');
-  if (top) top.classList.add('slide-out-right');
-  currentIndex--;
-  setTimeout(() => renderStack('left'), 200);
+  if (currentIndex <= 0) return
+  currentIndex--
+  renderStack('left')
 }
 
 function flipCard() {
-  const top = document.querySelector('.card[data-depth="0"]');
-  if (top) top.classList.toggle('flipped');
+  const top = document.querySelector('.card[data-depth="0"]')
+  if (!top) return
+  const btn = top.querySelector('.card-flip-btn') as HTMLButtonElement
+  if (!btn) return
+  btn.ariaPressed = btn.matches('[aria-pressed="false"]') as any
 }
 
 function filterDeck(deck: string) {
-  cards = allCards.filter(c => c.data.deck === deck);
-  currentIndex = 0;
-  renderStack();
+  cards = allCards.filter(c => c.data.deck === deck)
+  currentIndex = 0
+  renderStack()
 }
 
 function initKeyboard() {
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowRight') goNext();
-    else if (e.key === 'ArrowLeft') goPrev();
+    if (e.key === 'ArrowRight') goNext()
+    else if (e.key === 'ArrowLeft') goPrev()
     else if (e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      flipCard();
+      e.preventDefault()
+      flipCard()
     }
-  });
+  })
+}
+
+function initPointerTracking() {
+  document.body.addEventListener('pointermove', (e) => {
+    const card = document.querySelector('.card[data-depth="0"]')
+    if (!card) return
+
+    const bounds = card.getBoundingClientRect()
+    const posX = e.clientX - bounds.x
+    const posY = e.clientY - bounds.y
+    const ratioX = (posX / bounds.width - 0.5) * 2
+    const ratioY = (posY / bounds.height - 0.5) * 2
+
+    gsap.set(card, {
+      '--pointer-x': gsap.utils.clamp(-1, 1, ratioX).toFixed(2),
+      '--pointer-y': gsap.utils.clamp(-1, 1, ratioY).toFixed(2),
+    })
+  })
 }
 
 function loadCards(): Flashcard[] {
-  const el = document.getElementById('flashcards-data');
-  if (!el) return [];
-  return JSON.parse(el.textContent || '[]');
+  const el = document.getElementById('flashcards-data')
+  if (!el) return []
+  return JSON.parse(el.textContent || '[]')
 }
 
 function init() {
-  allCards = loadCards();
-  const deckSelect = document.getElementById('deck') as HTMLSelectElement;
-  cards = allCards.filter(c => c.data.deck === deckSelect.value);
+  allCards = loadCards()
+  const deckSelect = document.getElementById('deck') as HTMLSelectElement
+  cards = allCards.filter(c => c.data.deck === deckSelect.value)
 
-  renderStack();
-  initKeyboard();
+  renderStack()
+  initKeyboard()
+  initPointerTracking()
 
-  document.getElementById('next-btn')!.addEventListener('click', goNext);
-  document.getElementById('prev-btn')!.addEventListener('click', goPrev);
-  deckSelect.addEventListener('change', () => filterDeck(deckSelect.value));
+  document.getElementById('next-btn')!.addEventListener('click', goNext)
+  document.getElementById('prev-btn')!.addEventListener('click', goPrev)
+  deckSelect.addEventListener('change', () => filterDeck(deckSelect.value))
 }
 
-init();
+init()
