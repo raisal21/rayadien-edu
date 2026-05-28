@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Astro build output
+dist/
+.astro/
+
+# Vercel
+.vercel/
+
+# OS files
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Claude
+.claude/
+
+# Temp files
+*.bak
+*.bak.html
+generate-entries.js

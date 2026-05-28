@@ -1,0 +1,66 @@
+---
+import { render } from 'astro:content';
+
+interface Props {
+  entry: {
+    id: string;
+    data: {
+      topic: 'jamur' | 'eko';
+      bagian: 'A' | 'B' | 'C';
+      type: 'pg' | 'pg-kompleks' | 'isian';
+      nomor: number;
+      title: string;
+      indikator: string;
+      image?: string;
+      diagram?: string;
+      trik?: string;
+    };
+    body?: string;
+  };
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+const qnum = `${data.bagian}${data.nomor}`;
+const hasImage = !!data.image;
+const topicLabel = data.topic === 'jamur' ? 'Jamur' : 'Ekosistem';
+
+const { Content } = await render(entry);
+---
+
+<article
+  class:list={['entry', 'reveal', { lonely: !hasImage }]}
+  data-topic={data.topic}
+  id={qnum}
+>
+  <header class="entry-head">
+    <span class="qnum">{qnum}</span>
+    <h3>{data.title}</h3>
+    <span class="badge">{topicLabel}</span>
+  </header>
+
+  <blockquote class="indikator" set:html={data.indikator} />
+
+  {hasImage && (
+    <figure class="plate">
+      <button class="plate-frame">
+        <img src={`/${data.image}`} loading="lazy" alt={data.title}>
+      </button>
+      <figcaption>
+        <span class="cap"><b>Plat</b>{data.title}.</span>
+        <span class="zoom">&#x2295; perbesar</span>
+      </figcaption>
+    </figure>
+  )}
+
+  <Content />
+
+  {data.trik && (
+    <details class="trik">
+      <summary>
+        <span class="ico">&#x1F4A1;</span>Trik jawab<span class="chev">&#x25B6;</span>
+      </summary>
+      <div set:html={data.trik} />
+    </details>
+  )}
+</article>

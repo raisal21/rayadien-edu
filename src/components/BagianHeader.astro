@@ -1,0 +1,16 @@
+---
+interface Props {
+  bagian: 'A' | 'B' | 'C';
+  title: string;
+  count: number;
+  note?: string;
+}
+
+const { bagian, title, count, note } = Astro.props;
+---
+
+<div class="bagian">
+  <span class="bagian-k">Bagian {bagian}</span>
+  <h2>{title} <span class="cnt">{count} soal</span></h2>
+  {note && <p class="note" set:html={note} />}
+</div>

@@ -1,0 +1,22 @@
+---
+interface Props {
+  topic: 'jamur' | 'eko';
+  label: string;
+  range: string;
+}
+
+const { topic, label, range } = Astro.props;
+const cls = topic === 'jamur' ? 'j' : 'e';
+---
+
+<div class:list={['topicdivider', cls]}>
+  <span class="tk">
+    {topic === 'jamur' ? (
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7.6 4 4 6.8 4 10c0 .9.7 1.5 1.6 1.5h12.8c.9 0 1.6-.6 1.6-1.5 0-3.2-3.6-6-8-6z" fill="#a85d2e"/><path d="M9.6 11.5h4.8l-.5 6.6a1.9 1.9 0 0 1-3.8 0z" fill="#26412e"/></svg>
+    ) : (
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C8 7 6 11 6 15a6 6 0 0 0 12 0c0-4-2-8-6-12z" fill="#5d7a4c"/><path d="M12 21V9" stroke="#26412e" stroke-width="1.6" fill="none"/></svg>
+    )}
+    {label}
+  </span>
+  <span class="rng">{range}</span>
+</div>

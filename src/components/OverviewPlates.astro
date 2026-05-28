@@ -1,0 +1,35 @@
+---
+interface Plate {
+  src: string;
+  alt: string;
+  cap: string;
+  label: string;
+}
+
+interface Props {
+  topic: 'jamur' | 'eko';
+  title: string;
+  subtitle: string;
+  plates: [Plate, Plate];
+}
+
+const { topic, title, subtitle, plates } = Astro.props;
+---
+
+<section class="overview reveal" data-topic={topic} aria-label={`Peta materi ${title}`}>
+  <p class="overview-h">Peta Materi &middot; {title}</p>
+  <p class="overview-s">{subtitle}</p>
+  <div class="plates2">
+    {plates.map((p, i) => (
+      <figure class="plate">
+        <button class="plate-frame" data-cap={p.cap}>
+          <img src={`/${p.src}`} loading="lazy" alt={p.alt}>
+        </button>
+        <figcaption>
+          <span class="cap"><b>Plat {i + 1}</b>{p.label}</span>
+          <span class="zoom">&#x2295; perbesar</span>
+        </figcaption>
+      </figure>
+    ))}
+  </div>
+</section>
