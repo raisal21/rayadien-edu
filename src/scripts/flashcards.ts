@@ -11,9 +11,12 @@ interface Flashcard {
   }
 }
 
+type Direction = 'left' | 'right'
+
 let allCards: Flashcard[] = []
 let cards: Flashcard[] = []
 let currentIndex = 0
+let isTransitioning = false
 
 function parseMd(text: string): string {
   let html = text
@@ -73,75 +76,287 @@ function buildCardHTML(card: Flashcard): string {
   `
 }
 
-function renderStack(direction?: 'left' | 'right') {
+function depthState(depth: number) {
+  if (depth === 0) return { y: 0, scale: 1, opacity: 1, zIndex: 3 }
+  if (depth === 1) return { y: -18, scale: 0.96, opacity: 0.52, zIndex: 2 }
+  return { y: -36, scale: 0.92, opacity: 0.24, zIndex: 1 }
+}
+
+function attachFlipHandler(el: HTMLElement) {
+  const btn = el.querySelector('.card-flip-btn') as HTMLButtonElement
+  btn.addEventListener('click', () => {
+    if (el.dataset.active === 'false' || isTransitioning) return
+    toggleCardFlip(el)
+  })
+}
+
+function createCardElement(cardIndex: number, depth: number, active = false) {
+  const card = cards[cardIndex]
+  const el = document.createElement('div')
+  el.className = 'card'
+  el.dataset.depth = String(depth)
+  el.dataset.index = String(cardIndex)
+  el.dataset.active = active ? 'true' : 'false'
+  el.innerHTML = buildCardHTML(card)
+
+  if (active) attachFlipHandler(el)
+  return el
+}
+
+function getCardElementByIndex(cardIndex: number) {
+  const stack = document.getElementById('card-stack')
+  if (!stack) return null
+
+  return Array.from(stack.querySelectorAll<HTMLElement>('.card'))
+    .find(el => el.dataset.index === String(cardIndex)) ?? null
+}
+
+function renderStack(enterFrom?: Direction) {
   const stack = document.getElementById('card-stack')!
   stack.innerHTML = ''
 
-  const visible = Math.min(3, cards.length - currentIndex)
+  const total = cards.length
+  if (total === 0) {
+    document.getElementById('current')!.textContent = '0'
+    document.getElementById('total')!.textContent = '0'
+    updateProgress(0, 0)
+    updateNav()
+    return
+  }
+
+  const visible = Math.min(3, total)
 
   for (let i = visible - 1; i >= 0; i--) {
-    const card = cards[currentIndex + i]
-    const el = document.createElement('div')
-    el.className = 'card'
-    el.dataset.depth = String(i)
-    el.dataset.active = 'true'
-    el.innerHTML = buildCardHTML(card)
+    const cardIndex = (currentIndex + i) % total
+    const el = createCardElement(cardIndex, i, i === 0)
 
-    if (i === 0) {
-      const btn = el.querySelector('.card-flip-btn') as HTMLButtonElement
-      btn.addEventListener('click', () => {
-        if (el.dataset.active === 'false') return
-        btn.ariaPressed = btn.matches('[aria-pressed="false"]') as any
-      })
+    if (i === 0 && enterFrom) {
+      el.classList.add('is-entering')
+      const side = enterFrom === 'right' ? 1 : -1
 
-      gsap.from(el, {
-        x: direction === 'left' ? -60 : direction === 'right' ? 60 : 0,
-        opacity: 0,
-        scale: 0.92,
-        duration: 0.4,
-        ease: 'power2.out',
-        clearProps: 'transform,opacity',
-      })
+      gsap.fromTo(el,
+        {
+          x: side * 90,
+          opacity: 0,
+          scale: 0.92,
+          rotateY: side * -22,
+          rotateZ: side * 2,
+        },
+        {
+          x: 0,
+          opacity: 1,
+          scale: 1,
+          rotateY: 0,
+          rotateZ: 0,
+          duration: 0.48,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity',
+          onComplete: () => el.classList.remove('is-entering'),
+        }
+      )
     }
 
     stack.appendChild(el)
   }
 
   document.getElementById('current')!.textContent = String(currentIndex + 1)
-  document.getElementById('total')!.textContent = String(cards.length)
+  document.getElementById('total')!.textContent = String(total)
+  updateProgress(currentIndex + 1, total)
   updateNav()
+}
+
+function updateProgress(current: number, total: number) {
+  const fill = document.getElementById('progress-fill')
+  if (!fill) return
+  const pct = total === 0 ? 0 : (current / total) * 100
+  fill.style.width = `${pct}%`
 }
 
 function updateNav() {
   const prev = document.getElementById('prev-btn')! as HTMLButtonElement
   const next = document.getElementById('next-btn')! as HTMLButtonElement
-  prev.disabled = currentIndex === 0
-  next.disabled = currentIndex >= cards.length - 1
+  const disabled = cards.length <= 1 || isTransitioning
+  prev.disabled = disabled
+  next.disabled = disabled
+}
+
+function animateStackShuffle(direction: Direction, nextIndex: number) {
+  const stack = document.getElementById('card-stack')!
+  const visible = Math.min(3, cards.length)
+  const side = direction === 'right' ? 1 : -1
+  const top = stack.querySelector<HTMLElement>('.card[data-depth="0"]')
+
+  if (!top) {
+    currentIndex = nextIndex
+    isTransitioning = false
+    renderStack()
+    return
+  }
+
+  let incoming = getCardElementByIndex(nextIndex)
+  const createdIncoming = !incoming
+
+  if (!incoming) {
+    incoming = createCardElement(nextIndex, visible - 1, false)
+    incoming.classList.add('is-shuffling')
+    stack.appendChild(incoming)
+
+    const start = depthState(visible - 1)
+    gsap.set(incoming, {
+      x: side * 90,
+      y: start.y,
+      scale: start.scale,
+      opacity: start.opacity,
+      rotateY: side * -24,
+      rotateZ: side * 2,
+      zIndex: start.zIndex,
+    })
+  }
+
+  const movingCards = Array.from(stack.querySelectorAll<HTMLElement>('.card'))
+  movingCards.forEach(el => {
+    el.dataset.active = 'false'
+    el.classList.add('is-shuffling')
+  })
+  top.classList.add('is-leaving')
+
+  const inner = top.querySelector<HTMLElement>('.card-inner')
+  gsap.killTweensOf([top, inner, incoming, ...movingCards])
+
+  const topBackDepth = direction === 'right' ? visible - 1 : 1
+  const topBack = depthState(topBackDepth)
+  const tl = gsap.timeline({
+    defaults: { overwrite: 'auto' },
+    onComplete: () => {
+      currentIndex = nextIndex
+      isTransitioning = false
+      renderStack()
+    },
+  })
+
+  gsap.set(top, { zIndex: 5, transformOrigin: '50% 50%' })
+  gsap.set(incoming, { zIndex: 4 })
+
+  tl.to(top, {
+    x: side * 238,
+    y: 22,
+    scale: 0.94,
+    rotateY: side * -58,
+    rotateZ: side * 7,
+    duration: 0.34,
+    ease: 'power2.inOut',
+  }, 0)
+    .to(top, {
+      x: 0,
+      y: topBack.y,
+      scale: topBack.scale,
+      opacity: topBack.opacity,
+      rotateY: 0,
+      rotateZ: 0,
+      duration: 0.46,
+      ease: 'power3.inOut',
+      onStart: () => gsap.set(top, { zIndex: topBack.zIndex - 1 }),
+    }, 0.30)
+    .to(top, {
+      '--flip-shadow': 0.28,
+      duration: 0.26,
+      repeat: 1,
+      yoyo: true,
+      ease: 'sine.inOut',
+    }, 0)
+    .to(incoming, {
+      x: 0,
+      y: 0,
+      scale: 1,
+      opacity: 1,
+      rotateY: 0,
+      rotateZ: 0,
+      duration: 0.62,
+      ease: 'back.out(1.08)',
+    }, createdIncoming ? 0.10 : 0.06)
+
+  const otherCards = movingCards
+    .filter(el => el !== top && el !== incoming)
+    .sort((a, b) => Number(a.dataset.depth) - Number(b.dataset.depth))
+
+  otherCards.forEach((el, index) => {
+    const targetDepth = direction === 'right' ? index + 1 : Math.min(index + 2, 2)
+    const state = depthState(targetDepth)
+
+    tl.to(el, {
+      x: 0,
+      y: state.y,
+      scale: state.scale,
+      opacity: state.opacity,
+      rotateY: 0,
+      rotateZ: 0,
+      zIndex: state.zIndex,
+      duration: 0.52,
+      ease: 'power3.inOut',
+    }, 0.08)
+  })
+}
+
+function changeCard(direction: Direction) {
+  if (isTransitioning || cards.length <= 1) return
+
+  const nextIndex = direction === 'right'
+    ? (currentIndex + 1) % cards.length
+    : (currentIndex - 1 + cards.length) % cards.length
+
+  isTransitioning = true
+  updateNav()
+  animateStackShuffle(direction, nextIndex)
 }
 
 function goNext() {
-  if (currentIndex >= cards.length - 1) return
-  currentIndex++
-  renderStack('right')
+  changeCard('right')
 }
 
 function goPrev() {
-  if (currentIndex <= 0) return
-  currentIndex--
-  renderStack('left')
+  changeCard('left')
+}
+
+function toggleCardFlip(card: Element) {
+  const inner = card.querySelector('.card-inner') as HTMLElement | null
+  const btn = card.querySelector('.card-flip-btn') as HTMLButtonElement | null
+  if (!inner || !btn) return
+
+  const nextFlipped = !card.classList.contains('is-flipped')
+  card.classList.toggle('is-flipped', nextFlipped)
+  card.classList.add('is-flipping')
+  btn.setAttribute('aria-pressed', String(nextFlipped))
+
+  gsap.killTweensOf(inner)
+  gsap.to(inner, {
+    rotateY: nextFlipped ? 180 : 0,
+    duration: 0.72,
+    ease: 'power3.inOut',
+  })
+
+  gsap.fromTo(card,
+    { '--flip-shadow': 0.12 },
+    {
+      '--flip-shadow': 0.32,
+      duration: 0.36,
+      repeat: 1,
+      yoyo: true,
+      ease: 'sine.inOut',
+      onComplete: () => card.classList.remove('is-flipping'),
+    }
+  )
 }
 
 function flipCard() {
   const top = document.querySelector('.card[data-depth="0"]')
-  if (!top) return
-  const btn = top.querySelector('.card-flip-btn') as HTMLButtonElement
-  if (!btn) return
-  btn.ariaPressed = btn.matches('[aria-pressed="false"]') as any
+  if (!top || isTransitioning) return
+  toggleCardFlip(top)
 }
 
 function filterDeck(deck: string) {
   cards = allCards.filter(c => c.data.deck === deck)
   currentIndex = 0
+  isTransitioning = false
   renderStack()
 }
 
@@ -159,7 +374,7 @@ function initKeyboard() {
 function initPointerTracking() {
   document.body.addEventListener('pointermove', (e) => {
     const card = document.querySelector('.card[data-depth="0"]')
-    if (!card) return
+    if (!card || isTransitioning) return
 
     const bounds = card.getBoundingClientRect()
     const posX = e.clientX - bounds.x
@@ -191,6 +406,7 @@ function init() {
 
   document.getElementById('next-btn')!.addEventListener('click', goNext)
   document.getElementById('prev-btn')!.addEventListener('click', goPrev)
+  document.getElementById('flip-btn')!.addEventListener('click', flipCard)
   deckSelect.addEventListener('change', () => filterDeck(deckSelect.value))
 }
 
