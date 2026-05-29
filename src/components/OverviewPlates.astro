@@ -4,6 +4,8 @@ interface Plate {
   alt: string;
   cap: string;
   label: string;
+  width?: number;
+  height?: number;
 }
 
 interface Props {
@@ -23,7 +25,7 @@ const { topic, title, subtitle, plates } = Astro.props;
     {plates.map((p, i) => (
       <figure class="plate">
         <button class="plate-frame" data-cap={p.cap}>
-          <img src={`/${p.src}`} loading="lazy" alt={p.alt}>
+          <img src={`/${p.src}`} loading="lazy" alt={p.alt} width={p.width} height={p.height}>
         </button>
         <figcaption>
           <span class="cap"><b>Gambar {i + 1}</b>{p.label}</span>

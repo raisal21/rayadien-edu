@@ -1,5 +1,6 @@
 ---
 import { render } from 'astro:content';
+import { IMAGE_DIMS } from '../lib/imageMeta';
 
 interface Props {
   entry: {
@@ -47,6 +48,7 @@ const topicLabel =
   data.topic.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 const { Content } = await render(entry);
+const dims = data.image ? IMAGE_DIMS[data.image] : undefined;
 ---
 
 <article
@@ -65,7 +67,7 @@ const { Content } = await render(entry);
   {hasImage && (
     <figure class="plate">
       <button class="plate-frame">
-        <img src={`/${data.image}`} loading="lazy" alt={data.title}>
+        <img src={`/${data.image}`} loading="lazy" alt={data.title} width={dims?.width} height={dims?.height}>
       </button>
       <figcaption>
         <span class="cap"><b>Gambar</b>{data.title}.</span>

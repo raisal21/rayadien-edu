@@ -17,7 +17,7 @@ export interface AccentRamp {
 
 export interface Chip { cls?: string; label: string }
 export interface Filter { value: string; label: string }
-export interface Plate { src: string; alt: string; cap: string; label: string }
+export interface Plate { src: string; alt: string; cap: string; label: string; width?: number; height?: number }
 export interface OverviewBlock { title: string; subtitle: string; plates: Plate[] }
 
 export interface SubjectConfig {
@@ -129,12 +129,16 @@ export const SUBJECTS: SubjectConfig[] = [
             alt: 'Infografik struktur fungi (jamur) dan perannya: tudung, lamela, cincin, stipe, volva, miselium, hifa, dinding sel, septa.',
             cap: 'Struktur tubuh jamur lengkap (tudung, lamela, cincin, tangkai, volva, miselium, hifa) beserta perannya.',
             label: 'Struktur jamur & perannya.',
+            width: 1536,
+            height: 1024,
           },
           {
             src: 'img/jamur-overview-reproduksi.webp',
             alt: 'Infografik reproduksi jamur pada 4 divisi (Zygomycota, Ascomycota, Basidiomycota, Deuteromycota) secara vegetatif dan generatif.',
             cap: 'Reproduksi jamur pada 4 divisi: Zygomycota, Ascomycota, Basidiomycota, Deuteromycota — vegetatif (aseksual) dan generatif (seksual).',
             label: 'Reproduksi 4 divisi jamur.',
+            width: 1536,
+            height: 1024,
           },
         ],
       },
