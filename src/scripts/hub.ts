@@ -46,7 +46,7 @@ function renderGrid(data: HubData, sem: string) {
           <span class="sc-num">${num}</span>
           <h2>${sub.name}</h2>
           <p class="sc-desc">${sub.desc}</p>
-          <span class="sc-meta">Segera hadir</span>
+          <span class="sc-meta">Coming soon</span>
         </div>`
     })
     .join('')

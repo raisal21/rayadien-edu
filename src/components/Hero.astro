@@ -21,7 +21,7 @@ const {
   titleMain = 'Biologi',
   titleEm = 'Kelas X',
   titleSub = 'Jamur & Ekosistem',
-  lede = 'Catatan lengkap untuk asesmen akhir semester &mdash; disusun <b>1:1 mengikuti kisi-kisi</b>, dengan plat gambar untuk tiap materi yang diujikan.',
+  lede = 'Catatan lengkap buat asesmen akhir semester &mdash; disusun <b>pas sama kisi-kisi</b>, dengan gambar untuk tiap materi yang diujikan.',
   src = 'Sumber: materi <em>Fungi</em> &amp; <em>Ekosistem</em> oleh Rahma Yeni, S.Pd &mdash; tanpa tambahan dari luar.',
   legend = [
     { cls: 'j', label: 'Jamur (Fungi)' },
@@ -29,23 +29,11 @@ const {
     { cls: 'n', label: '35 soal &middot; A 25 &middot; B 5 &middot; C 5' },
   ],
   flashHref = '/flashcards',
-  howto = '<b>Cara pakai:</b> baca <em>indikator</em> &#x2192; pahami <em>inti materi</em> &#x2192; amati <em>plat gambar</em> (klik untuk perbesar &amp; geser) &#x2192; buka <em>trik jawab</em>. Pakai tombol topik di atas untuk fokus satu topik, atau ketik di kotak <em>cari</em>.',
+  howto = '<b>Cara pakai:</b> baca <em>indikator</em> &#x2192; pahami <em>inti materi</em> &#x2192; amati <em>gambar</em> (klik untuk perbesar &amp; geser) &#x2192; buka <em>trik jawab</em>. Pakai tombol topik di atas untuk fokus ke satu topik.',
 } = Astro.props;
 ---
 
 <header class="hero">
-  <span class="sprig tr" aria-hidden="true">
-    <svg viewBox="0 0 240 240"><defs><path id="lf" d="M0 0C10 -6 10 -20 0 -28C-10 -20 -10 -6 0 0Z"/></defs>
-      <path d="M20 222C80 184 130 152 150 82C158 54 170 38 198 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
-      <g fill="currentColor"><use href="#lf" transform="translate(126 152) rotate(-42)"/><use href="#lf" transform="translate(137 128) rotate(44)"/><use href="#lf" transform="translate(143 106) rotate(-36)"/><use href="#lf" transform="translate(150 84) rotate(38)"/><use href="#lf" transform="translate(160 60) rotate(-30)"/><use href="#lf" transform="translate(174 42) rotate(32)"/><use href="#lf" transform="translate(190 30) rotate(-20)"/><use href="#lf" transform="translate(199 22) rotate(14) scale(.8)"/></g>
-    </svg>
-  </span>
-  <span class="sprig bl" aria-hidden="true">
-    <svg viewBox="0 0 240 240"><use href="#lf" x="0" y="0"/>
-      <path d="M20 222C80 184 130 152 150 82C158 54 170 38 198 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
-      <g fill="currentColor"><use href="#lf" transform="translate(126 152) rotate(-42)"/><use href="#lf" transform="translate(137 128) rotate(44)"/><use href="#lf" transform="translate(143 106) rotate(-36)"/><use href="#lf" transform="translate(150 84) rotate(38)"/><use href="#lf" transform="translate(160 60) rotate(-30)"/><use href="#lf" transform="translate(174 42) rotate(32)"/><use href="#lf" transform="translate(190 30) rotate(-20)"/></g>
-    </svg>
-  </span>
   <div class="wrap">
     <p class="eyebrow" set:html={eyebrow} />
     <h1>{titleMain} <em>{titleEm}</em><br>{titleSub}</h1>
@@ -66,7 +54,8 @@ const {
           <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
           <path d="M3 21v-5h5"/>
         </svg>
-        <span>Belajar dengan Flashcards</span>
+        <span>Latihan pakai Flashcards</span>
+        <span class="fb-arrow" aria-hidden="true">&#x2192;</span>
       </a>
     )}
     {howto && (
@@ -75,5 +64,7 @@ const {
         <span set:html={howto} />
       </div>
     )}
+
+    <div class="hero-rule" aria-hidden="true"></div>
   </div>
 </header>

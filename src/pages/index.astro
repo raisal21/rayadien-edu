@@ -1,74 +1,90 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { SUBJECTS, SEMESTERS } from '../config/subjects';
 
-const subjects = [
-  { id: 'sejarah',   name: 'Sejarah',   desc: 'Peradaban, peristiwa & tokoh.' },
-  { id: 'biologi',   name: 'Biologi',   desc: 'Makhluk hidup & ekosistem.' },
-  { id: 'ekonomi',   name: 'Ekonomi',   desc: 'Pasar, uang & kebijakan.' },
-  { id: 'ppkn',      name: 'PPKn',      desc: 'Pancasila & kewarganegaraan.' },
-  { id: 'geografi',  name: 'Geografi',  desc: 'Bumi, ruang & lingkungan.' },
-  { id: 'sosiologi', name: 'Sosiologi', desc: 'Masyarakat & interaksi sosial.' },
-];
+const subjects = SUBJECTS.map((s) => ({ id: s.id, name: s.name, desc: s.desc }));
+const semesters = SEMESTERS;
+const defaultSem = String(SEMESTERS[0]);
 
-const semesters = [2, 3, 4, 5, 6, 7];
-const defaultSem = '2';
-
-// availability[semester][subjectId] = { href, meta }
-const availability: Record<string, Record<string, { href: string; meta: string }>> = {
-  '2': {
-    sejarah:  { href: '/sejarah',  meta: 'Bank soal · 40 soal' },
-    biologi:  { href: '/biologi',  meta: 'Bank soal · Flashcards' },
-    ekonomi:  { href: '/ekonomi',  meta: 'Bank soal · 35 soal' },
-    ppkn:     { href: '/ppkn',     meta: 'Bank soal · 40 soal' },
-    geografi: { href: '/geografi', meta: 'Bank soal · 35 soal' },
-  },
-};
+// availability[semester][subjectId] derived from actual content — a card
+// unlocks automatically once entries exist for that subject + semester.
+const entries = await getCollection('entries');
+const counts: Record<string, number> = {};
+for (const e of entries) {
+  const k = `${e.data.semester}/${e.data.subject}`;
+  counts[k] = (counts[k] ?? 0) + 1;
+}
+const availability: Record<string, Record<string, { href: string; meta: string }>> = {};
+for (const k in counts) {
+  const [sem, id] = k.split('/');
+  (availability[sem] ??= {})[id] = { href: `/${id}/${sem}`, meta: `Bank soal · ${counts[k]} soal` };
+}
 ---
 
 <BaseLayout title="Rayadien Edu — Kurikulum SMA">
-  <div class="hub">
-    <div class="hub-inner">
-      <header class="hub-head">
-        <span class="eyebrow">Kurikulum SMA</span>
-        <h1>Rayadien <span>Edu</span></h1>
-        <p class="lede">Pilih semester, lalu mata pelajaran. Materi tersusun rapi per jenjang.</p>
+  <div class="zine">
+    <span class="reg reg-tl" aria-hidden="true"></span>
+    <span class="reg reg-tr" aria-hidden="true"></span>
+    <span class="reg reg-bl" aria-hidden="true"></span>
+    <span class="reg reg-br" aria-hidden="true"></span>
+
+    <div class="zine-inner">
+      <header class="mast">
+        <p class="colophon">
+          <span>Kurikulum SMA</span><i class="star">✸</i><span>Catatan Belajar</span>
+        </p>
+        <h1 class="mast-h"><span class="m1">Rayadien</span> <span class="m2">Edu</span></h1>
+        <p class="lede">Enam mata pelajaran, disusun rapi per semester. Pilih semesternya dulu, lalu pilih mapel yang mau kamu baca.</p>
+        <div class="mast-rule" aria-hidden="true"></div>
       </header>
 
-      <nav class="sem-tabs" id="sem-tabs" aria-label="Pilih semester">
-        {semesters.map(s => (
-          <button
-            class="sem-tab"
-            data-sem={String(s)}
-            aria-pressed={String(s) === defaultSem ? 'true' : 'false'}
-          >
-            <span class="sem-k">Sem</span>
-            <span class="sem-n">{s}</span>
-          </button>
-        ))}
-      </nav>
+      <section class="block">
+        <p class="cap"><b>01</b> Pilih semester</p>
+        <nav class="sem-tabs" id="sem-tabs" aria-label="Pilih semester">
+          {semesters.map(s => (
+            <button
+              class="sem-tab"
+              data-sem={String(s)}
+              aria-pressed={String(s) === defaultSem ? 'true' : 'false'}
+            >
+              <span class="sem-k">Sem</span>
+              <span class="sem-n">{s}</span>
+            </button>
+          ))}
+        </nav>
+      </section>
 
-      <div class="subject-grid" id="subject-grid">
-        {subjects.map((sub, i) => {
-          const avail = availability[defaultSem]?.[sub.id];
-          const num = String(i + 1).padStart(2, '0');
-          return avail ? (
-            <a class="subject-card" href={avail.href} data-subject={sub.id}>
-              <span class="sc-num">{num}</span>
-              <h2>{sub.name}</h2>
-              <p class="sc-desc">{sub.desc}</p>
-              <span class="sc-meta">{avail.meta}</span>
-              <span class="sc-arrow" aria-hidden="true">→</span>
-            </a>
-          ) : (
-            <div class="subject-card is-locked" data-subject={sub.id} aria-disabled="true">
-              <span class="sc-num">{num}</span>
-              <h2>{sub.name}</h2>
-              <p class="sc-desc">{sub.desc}</p>
-              <span class="sc-meta">Segera hadir</span>
-            </div>
-          );
-        })}
-      </div>
+      <section class="block">
+        <p class="cap"><b>02</b> Pilih mata pelajaran</p>
+        <div class="subject-grid" id="subject-grid">
+          {subjects.map((sub, i) => {
+            const avail = availability[defaultSem]?.[sub.id];
+            const num = String(i + 1).padStart(2, '0');
+            return avail ? (
+              <a class="subject-card" href={avail.href} data-subject={sub.id}>
+                <span class="sc-num">{num}</span>
+                <h2>{sub.name}</h2>
+                <p class="sc-desc">{sub.desc}</p>
+                <span class="sc-meta">{avail.meta}</span>
+                <span class="sc-arrow" aria-hidden="true">→</span>
+              </a>
+            ) : (
+              <div class="subject-card is-locked" data-subject={sub.id} aria-disabled="true">
+                <span class="sc-num">{num}</span>
+                <h2>{sub.name}</h2>
+                <p class="sc-desc">{sub.desc}</p>
+                <span class="sc-meta">Coming soon</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <footer class="colofoot">
+        <span>© 2026 Rayadien Edu</span>
+        <span>Selamat belajar <i class="star">✸</i></span>
+      </footer>
     </div>
   </div>
 
@@ -85,232 +101,268 @@ const availability: Record<string, Record<string, { href: string; meta: string }
 </BaseLayout>
 
 <style is:global>
-  .hub {
+  /* ════════════════════════════════════════════════
+     RISOGRAPH ZINE — Rayadien Edu hub
+     paper + spot inks · halftone · misregistration
+     ════════════════════════════════════════════════ */
+
+  /* palette inherits global tokens from :root (see styles/global.css) */
+  .zine {
+    position: relative;
     min-height: 100vh;
+    padding: clamp(1.5rem, 5vw, 3.4rem) 1.25rem clamp(2rem, 5vw, 3.4rem);
+    background:
+      radial-gradient(1100px 620px at 84% -12%, var(--paper-hi) 0%, transparent 58%),
+      linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+    color: var(--ink);
+    font-family: 'Space Mono', ui-monospace, monospace;
+    overflow: hidden;
+  }
+
+  /* paper grain — fixed multiply overlay */
+  .zine::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+
+  .zine-inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ── Registration marks ── */
+  .reg {
+    position: absolute;
+    z-index: 2;
+    width: 24px;
+    height: 24px;
+    color: var(--ink);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .reg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(currentColor, currentColor) 50% / 1.5px 100% no-repeat,
+      linear-gradient(currentColor, currentColor) 50% / 100% 1.5px no-repeat;
+  }
+  .reg::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+  }
+  .reg-tl { top: 16px; left: 16px; }
+  .reg-tr { top: 16px; right: 16px; }
+  .reg-bl { bottom: 16px; left: 16px; }
+  .reg-br { bottom: 16px; right: 16px; }
+
+  /* ── Masthead ── */
+  .mast { margin-bottom: 2.4rem; }
+
+  .colophon {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 3rem 1.5rem;
-    background:
-      radial-gradient(900px 520px at 82% -12%, #f4f3ef 0%, transparent 60%),
-      linear-gradient(180deg, #eceae4 0%, #e4e2da 100%);
-    color: #1a1a1a;
-    font-family: 'Public Sans', system-ui, sans-serif;
-  }
-
-  .hub-inner {
-    width: 100%;
-    max-width: 920px;
-  }
-
-  /* ── Header ── */
-  .hub-head {
-    margin-bottom: 2.5rem;
-  }
-
-  .eyebrow {
-    display: inline-block;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin: 0 0 1rem;
     font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.22em;
+    font-weight: 700;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #e0533d;
-    margin-bottom: 0.85rem;
+    color: var(--ink-soft);
   }
+  .colophon .star { color: var(--accent); font-style: normal; font-size: 0.85em; }
 
-  .hub-head h1 {
-    font-family: 'Spectral', serif;
-    font-size: clamp(2.8rem, 7vw, 4.6rem);
+  .mast-h {
+    font-family: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
     font-weight: 800;
-    line-height: 0.95;
-    letter-spacing: -0.03em;
+    font-size: clamp(3.2rem, 13vw, 7.2rem);
+    line-height: 0.8;
+    letter-spacing: -0.005em;
+    text-transform: uppercase;
     margin: 0;
-    color: #1a1a1a;
+    text-shadow: 0.035em 0.05em 0 rgba(255, 95, 162, 0.55);
   }
-
-  .hub-head h1 span {
-    font-style: italic;
-    font-weight: 500;
-    color: #e0533d;
-  }
+  .mast-h .m1 { color: var(--blue); }
+  .mast-h .m2 { color: var(--accent); }
 
   .lede {
-    margin: 1rem 0 0;
-    font-size: 1.05rem;
-    color: #6a6a64;
-    max-width: 44ch;
+    max-width: 46ch;
+    margin: 1.3rem 0 0;
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: var(--ink-soft);
   }
 
-  /* ── Semester Tabs ── */
+  .mast-rule {
+    height: 8px;
+    margin-top: 1.5rem;
+    background: linear-gradient(90deg, var(--blue) 0 62%, var(--accent) 62% 100%);
+  }
+
+  /* ── Section caption ── */
+  .block { margin-top: 2.6rem; }
+
+  .cap {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0 0 1.1rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .cap b {
+    color: var(--paper);
+    background: var(--ink);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+  .cap::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--ink) 0 4px, transparent 4px 9px);
+    opacity: 0.45;
+  }
+
+  /* ── Semester tabs (ticket stubs) ── */
   .sem-tabs {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    gap: 0.85rem;
   }
 
   .sem-tab {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.1rem;
-    min-width: 64px;
-    padding: 0.6rem 0.9rem;
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 12px;
-    color: #1a1a1a;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: 'Public Sans', sans-serif;
-  }
-
-  .sem-tab .sem-k {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #8a8a85;
-  }
-
-  .sem-tab .sem-n {
-    font-family: 'Spectral', serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .sem-tab:hover {
-    border-color: #e0533d;
-    transform: translateY(-2px);
-  }
-
-  .sem-tab[aria-pressed='true'] {
-    background: #e0533d;
-    border-color: #e0533d;
-    color: #ffffff;
-  }
-
-  .sem-tab[aria-pressed='true'] .sem-k {
-    color: rgba(255, 255, 255, 0.75);
-  }
-
-  /* ── Subject Grid ── */
-  .subject-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-  }
-
-  .subject-card {
     position: relative;
     display: flex;
     flex-direction: column;
-    padding: 1.4rem 1.5rem 1.5rem;
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 16px;
-    text-decoration: none;
-    color: inherit;
-    overflow: hidden;
-    transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.22s, border-color 0.22s;
+    align-items: center;
+    gap: 1px;
+    min-width: 64px;
+    padding: 0.9rem 0.95rem 0.6rem;
+    background: var(--card);
+    border: 1.5px solid var(--ink);
+    border-radius: 8px;
+    box-shadow: var(--sh-2) var(--blue);
+    color: var(--ink);
+    cursor: pointer;
+    transform: rotate(-1.3deg);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  .sem-tabs .sem-tab:nth-child(even) { transform: rotate(1.1deg); }
+
+  /* punch hole */
+  .sem-tab::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 9px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
   }
 
+  .sem-tab .sem-k {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .sem-tab .sem-n {
+    font-family: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 0.82;
+    color: var(--ink);
+  }
+
+  .sem-tab:hover {
+    transform: rotate(0) translateY(-2px);
+    box-shadow: var(--sh-3) var(--blue);
+  }
+
+  .sem-tab[aria-pressed='true'] {
+    background: var(--blue);
+    border-color: var(--ink);
+    box-shadow: var(--sh-2) var(--accent);
+    transform: rotate(0) translateY(-2px) scale(1.03);
+  }
+  .sem-tab[aria-pressed='true']::before { background: var(--blue); border-color: rgba(255, 255, 255, 0.55); }
+  .sem-tab[aria-pressed='true'] .sem-k { color: rgba(255, 255, 255, 0.78); }
+  .sem-tab[aria-pressed='true'] .sem-n { color: #fff; }
+
+  /* ── Subject grid ── */
+  .subject-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem 1.6rem;
+  }
+
+  /* per-subject spot ink = generated --accent (see config/subjects.ts) */
+  .subject-card { --ink: var(--accent); }
+
+  .subject-card {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    min-height: 196px;
+    padding: 1.35rem 1.4rem 1.5rem;
+    background:
+      repeating-linear-gradient(transparent 0 26px, rgba(35, 31, 29, 0.05) 26px 27px),
+      var(--card);
+    border: 1.6px solid var(--ink);
+    border-radius: 5px;
+    box-shadow: var(--sh-3) var(--ink);
+    color: inherit;
+    text-decoration: none;
+    transform: rotate(var(--rot, 0deg));
+    opacity: 1;
+    animation: zineRise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.2s ease;
+  }
+
+  /* halftone bloom, top-right corner */
   .subject-card::before {
     content: '';
     position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: #e0533d;
-    transform: scaleY(0);
-    transform-origin: top;
-    transition: transform 0.22s ease;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    color: var(--ink);
+    opacity: 0.18;
+    background-image: radial-gradient(currentColor 1.4px, transparent 1.7px);
+    background-size: 8px 8px;
+    -webkit-mask: radial-gradient(150px 120px at 100% 0%, #000 0%, transparent 72%);
+            mask: radial-gradient(150px 120px at 100% 0%, #000 0%, transparent 72%);
   }
 
-  a.subject-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(224, 83, 61, 0.4);
-    box-shadow: 0 18px 40px -18px rgba(40, 38, 34, 0.35);
-  }
+  .subject-card > * { position: relative; z-index: 1; }
 
-  a.subject-card:hover::before {
-    transform: scaleY(1);
-  }
-
-  .sc-num {
-    font-family: 'Spectral', serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #c9c7bf;
-    letter-spacing: 0.05em;
-  }
-
-  .subject-card h2 {
-    font-family: 'Spectral', serif;
-    font-size: 1.55rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin: 0.5rem 0 0;
-    color: #1a1a1a;
-  }
-
-  .sc-desc {
-    margin: 0.35rem 0 1.1rem;
-    font-size: 0.88rem;
-    line-height: 1.5;
-    color: #8a8a85;
-    flex: 1;
-  }
-
-  .sc-meta {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #e0533d;
-  }
-
-  .sc-arrow {
-    position: absolute;
-    right: 1.3rem;
-    bottom: 1.4rem;
-    font-size: 1.1rem;
-    color: #e0533d;
-    transform: translateX(-4px);
-    opacity: 0;
-    transition: all 0.22s ease;
-  }
-
-  a.subject-card:hover .sc-arrow {
-    transform: translateX(0);
-    opacity: 1;
-  }
-
-  /* ── Locked ── */
-  .subject-card.is-locked {
-    background: rgba(255, 255, 255, 0.45);
-    border-style: dashed;
-    cursor: not-allowed;
-  }
-
-  .subject-card.is-locked h2 {
-    color: #9a9a93;
-  }
-
-  .subject-card.is-locked .sc-meta {
-    color: #b0b0a8;
-  }
-
-  /* ── Reveal ── */
-  .subject-card {
-    opacity: 0;
-    transform: translateY(16px);
-    animation: hubRise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
-  }
+  .subject-grid .subject-card:nth-child(odd)  { --rot: -0.55deg; }
+  .subject-grid .subject-card:nth-child(even) { --rot: 0.55deg; }
 
   .subject-card:nth-child(1) { animation-delay: 0.04s; }
   .subject-card:nth-child(2) { animation-delay: 0.09s; }
@@ -319,22 +371,138 @@ const availability: Record<string, Record<string, { href: string; meta: string }
   .subject-card:nth-child(5) { animation-delay: 0.24s; }
   .subject-card:nth-child(6) { animation-delay: 0.29s; }
 
-  @keyframes hubRise {
-    to { opacity: 1; transform: none; }
+  @keyframes zineRise {
+    from { opacity: 0; transform: translateY(18px) rotate(var(--rot, 0deg)); }
   }
 
+  a.subject-card:hover {
+    transform: rotate(0) translate(-2px, -3px);
+    box-shadow: var(--sh-4) var(--ink);
+  }
+
+  /* number — corner tab */
+  .sc-num {
+    align-self: flex-start;
+    margin: -0.35rem 0 0 -0.25rem;
+    padding: 4px 11px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--paper);
+    background: var(--ink);
+    border-radius: 4px 4px 9px 4px;
+  }
+
+  .subject-card h2 {
+    font-family: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.7rem, 2.6vw, 2.15rem);
+    line-height: 0.9;
+    letter-spacing: 0.005em;
+    text-transform: uppercase;
+    margin: 0.7rem 0 0;
+    color: var(--ink);
+  }
+
+  .sc-desc {
+    flex: 1;
+    margin: 0.5rem 0 1.1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.76rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .sc-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5ch;
+    max-width: calc(100% - 2.6rem);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .sc-meta::before { content: '▪'; }
+
+  .sc-arrow {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    font-size: 0.95rem;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    background: var(--card);
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+  a.subject-card:hover .sc-arrow {
+    background: var(--ink);
+    color: var(--paper);
+    transform: translate(2px, -2px) rotate(-4deg);
+  }
+
+  /* ── Locked card ── */
+  .subject-card.is-locked {
+    --ink: var(--ink-soft);
+    background:
+      repeating-linear-gradient(transparent 0 26px, rgba(35, 31, 29, 0.04) 26px 27px),
+      var(--paper-2);
+    border-style: dashed;
+    box-shadow: 4px 4px 0 rgba(35, 31, 29, 0.12);
+    cursor: not-allowed;
+  }
+  .subject-card.is-locked::before { opacity: 0.08; }
+  .subject-card.is-locked .sc-num { background: var(--ink-soft); }
+  .subject-card.is-locked h2 { color: var(--ink-soft); }
+  .subject-card.is-locked .sc-meta {
+    align-self: flex-start;
+    padding: 3px 9px;
+    border: 1.5px dashed var(--ink-soft);
+    border-radius: 4px;
+    color: var(--ink-soft);
+    transform: rotate(-3.5deg);
+  }
+  .subject-card.is-locked .sc-meta::before { content: '◷'; }
+
+  /* ── Footer colophon ── */
+  .colofoot {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 1.2rem;
+    border-top: 1.5px solid var(--ink);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .colofoot .star { color: var(--accent); font-style: normal; }
+
   /* ── Responsive ── */
-  @media (max-width: 720px) {
+  @media (max-width: 760px) {
     .subject-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
-  @media (max-width: 460px) {
+  @media (max-width: 480px) {
     .subject-grid { grid-template-columns: 1fr; }
-    .hub { padding: 2rem 1.25rem; }
+    .reg { display: none; }
+    .mast-h { font-size: clamp(2.9rem, 17vw, 4rem); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .subject-card { animation: none; opacity: 1; transform: none; }
-    .sem-tab:hover, a.subject-card:hover { transform: none; }
+    .subject-card { animation: none; transform: rotate(var(--rot, 0deg)); }
+    .subject-card:hover,
+    a.subject-card:hover,
+    .sem-tab:hover { transform: none; }
   }
 </style>

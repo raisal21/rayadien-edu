@@ -1,11 +1,21 @@
 ---
 import '../styles/global.css';
+import { SUBJECTS } from '../config/subjects';
 
 interface Props {
   title: string;
+  subject?: string;
 }
 
-const { title } = Astro.props;
+const { title, subject } = Astro.props;
+
+// Single source of subject colors: generate `[data-subject="x"] { --accent… }`
+// from config. The attribute selector themes both <body data-subject> on a
+// subject page AND <… data-subject> hub cards. Edit colors in config/subjects.ts.
+const accentCss = SUBJECTS.map(
+  (s) =>
+    `[data-subject="${s.id}"]{--accent:${s.accent.base};--accent-2:${s.accent.dark};--accent-bg:${s.accent.bg};--accent-soft:${s.accent.soft};--accent-light:${s.accent.light};}`,
+).join('\n');
 ---
 
 <!doctype html>
@@ -16,10 +26,11 @@ const { title } = Astro.props;
   <title>{title}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..700&family=Mulish:ital,wght@0,400..800;1,400..600&family=Spectral:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Public+Sans:ital,wght@0,400..800;1,400..600&display=swap" rel="stylesheet">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4C7.6 4 4 6.8 4 10c0 .9.7 1.5 1.6 1.5h12.8c.9 0 1.6-.6 1.6-1.5 0-3.2-3.6-6-8-6z' fill='%23e0533d'/%3E%3Cpath d='M9.6 11.5h4.8l-.5 6.6a1.9 1.9 0 0 1-3.8 0z' fill='%231a1a1a'/%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:opsz,wght@10..72,400..800&family=Public+Sans:ital,wght@0,400..800;1,400..600&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1' y='1' width='22' height='22' rx='5' fill='%23f3eddf'/%3E%3Cpath d='M12 2.1L12.85 4.15L14.9 5L12.85 5.85L12 7.9L11.15 5.85L9.1 5L11.15 4.15Z' fill='%23ef3e2e'/%3E%3Cpath d='M11.3 9.4C8.8 7.9 5.6 7.7 3.2 8.5L3.2 18.4C5.6 17.6 8.8 17.8 11.3 19.3Z' fill='%23231f1d'/%3E%3Cpath d='M12.7 9.4C15.2 7.9 18.4 7.7 20.8 8.5L20.8 18.4C18.4 17.6 15.2 17.8 12.7 19.3Z' fill='%23231f1d'/%3E%3C/svg%3E">
+  <style is:global set:html={accentCss}></style>
 </head>
-<body>
+<body data-subject={subject}>
   <slot />
 </body>
 </html>

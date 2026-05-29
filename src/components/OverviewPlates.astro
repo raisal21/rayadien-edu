@@ -7,10 +7,10 @@ interface Plate {
 }
 
 interface Props {
-  topic: 'jamur' | 'eko';
+  topic: string;
   title: string;
   subtitle: string;
-  plates: [Plate, Plate];
+  plates: Plate[];
 }
 
 const { topic, title, subtitle, plates } = Astro.props;
@@ -26,7 +26,7 @@ const { topic, title, subtitle, plates } = Astro.props;
           <img src={`/${p.src}`} loading="lazy" alt={p.alt}>
         </button>
         <figcaption>
-          <span class="cap"><b>Plat {i + 1}</b>{p.label}</span>
+          <span class="cap"><b>Gambar {i + 1}</b>{p.label}</span>
           <span class="zoom">&#x2295; perbesar</span>
         </figcaption>
       </figure>

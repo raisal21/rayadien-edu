@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import FlashcardsShell from '../../components/FlashcardsShell.astro';
+import { SUBJECT_MAP, SEMESTERS } from '../../config/subjects';
+
+const getSubject = (id: string) => id.split('/')[0];
+
+export async function getStaticPaths() {
+  const cards = await getCollection('flashcards');
+  const subjects = [...new Set(cards.map(c => c.id.split('/')[0]).filter(Boolean))].sort();
+
+  return subjects.map(subject => ({
+    params: { subject },
+  }));
+}
+
+const subject = Astro.params.subject!;
+const allCards = await getCollection('flashcards');
+const cards = allCards.filter(c => getSubject(c.id) === subject);
+const decks = [...new Set(cards.map(c => c.data.deck))].sort();
+const label = SUBJECT_MAP[subject]?.name ?? subject;
+
+// back-link → subject's materi page at its first semester with content
+const semesters = (await getCollection('entries'))
+  .filter(e => e.data.subject === subject)
+  .map(e => e.data.semester);
+const backSem = semesters.length ? Math.min(...semesters) : SEMESTERS[0];
+---
+
+<FlashcardsShell
+  cards={cards}
+  decks={decks}
+  subject={subject}
+  backHref={`/${subject}/${backSem}`}
+  backLabel={`← ${label}`}
+  title={`Flashcards ${label} - Rayadien Edu`}
+/>

@@ -38,7 +38,17 @@ materi/semester-2/
 - `src/content/entries/{subject}/s{semester}/{bagian}{nomor}.md`
 - Frontmatter: `subject`, `semester`, `topic`, `bagian`, `type`, `nomor`, `title`, `indikator`, optional `image`
 - Body: `#### Inti Materi` + optional `#### Contoh`
-- Pages: `src/pages/{subject}.astro`
+- Flashcards: `src/content/flashcards/{subject}/<slug>.md` (frontmatter `deck`/`front`/`back`), 1 file = 1 kartu.
+
+## Arsitektur Halaman (refactor 2026-05-29)
+
+**Single source mapel = `src/config/subjects.ts`** — daftar mapel, warna accent, copy hero/topbar, topic label. Tambah mapel = 1 entry di sini (+ enum di `content.config.ts` + konten). **Ga ada lagi file `.astro` per mapel.**
+
+- **Materi**: 1 route dinamis `src/pages/[subject]/[semester].astro` → `/biologi/2`. `getStaticPaths` dari pasangan (subject×semester) yang ada kontennya + `active`. Filter entri by subject **dan** semester.
+- **Hub** `src/pages/index.astro`: `availability` di-*derive* dari konten (bukan map hardcoded). Tab semester dari `SEMESTERS`. Card unlock otomatis begitu ada konten.
+- **Flashcards**: `/flashcards` (semua) + `/flashcards/[subject]`. Default view "Semua kartu".
+- **Warna mapel**: `BaseLayout` generate `[data-subject="x"]{--accent…}` dari config → tema body (halaman materi) + card hub. **Edit warna cuma di config.**
+- **Aturan style + token + resep tambah subject/semester/flashcard** lengkap di **`STYLE.md`** (root). No magic hex / size / number.
 
 ## Gambar
 

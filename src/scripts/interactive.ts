@@ -71,7 +71,7 @@ let lastFocus: Element | null = null;
 function openLB(src: string, cap: string) {
   lastFocus = doc.activeElement;
   lbImg.src = src; lbImg.alt = cap || ''; lbImg.classList.remove('zoom');
-  lbCap.innerHTML = cap ? ('<b>Plat</b> ' + cap) : '';
+  lbCap.innerHTML = cap ? ('<b>Gambar</b> ' + cap) : '';
   lb.classList.add('open'); doc.body.style.overflow = 'hidden'; lbClose.focus();
 }
 

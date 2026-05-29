@@ -1,0 +1,105 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProgressBar from '../../components/ProgressBar.astro';
+import TopBar from '../../components/TopBar.astro';
+import Hero from '../../components/Hero.astro';
+import EntryCard from '../../components/EntryCard.astro';
+import BagianHeader from '../../components/BagianHeader.astro';
+import TopicDivider from '../../components/TopicDivider.astro';
+import OverviewPlates from '../../components/OverviewPlates.astro';
+import Footer from '../../components/Footer.astro';
+import BackToTop from '../../components/BackToTop.astro';
+import Lightbox from '../../components/Lightbox.astro';
+import { SUBJECT_MAP, EYEBROW, TITLE_EM, BRAND_SUB, NOTE_B } from '../../config/subjects';
+
+// One route for every active subject × semester that has content.
+export async function getStaticPaths() {
+  const entries = await getCollection('entries');
+  const pairs = new Set<string>();
+  for (const e of entries) {
+    const cfg = SUBJECT_MAP[e.data.subject];
+    if (cfg?.active) pairs.add(`${e.data.subject}/${e.data.semester}`);
+  }
+  return [...pairs].map((p) => {
+    const [subject, semester] = p.split('/');
+    return { params: { subject, semester } };
+  });
+}
+
+const { subject, semester } = Astro.params;
+const cfg = SUBJECT_MAP[subject];
+
+const entries = (await getCollection('entries')).filter(
+  (e) => e.data.subject === subject && String(e.data.semester) === semester,
+);
+const byBagian = (b: string) =>
+  entries.filter((e) => e.data.bagian === b).sort((a, c) => a.data.nomor - c.data.nomor);
+
+// Group bagian A by topic, preserving the order topics first appear.
+const aEntries = byBagian('A');
+const aGroups: { topic: string; items: typeof aEntries }[] = [];
+for (const e of aEntries) {
+  let g = aGroups.find((x) => x.topic === e.data.topic);
+  if (!g) { g = { topic: e.data.topic, items: [] }; aGroups.push(g); }
+  g.items.push(e);
+}
+
+const bEntries = byBagian('B');
+const cEntries = byBagian('C');
+const rangeOf = (items: typeof aEntries) =>
+  `No. ${items[0]?.data.nomor}–${items[items.length - 1]?.data.nomor}`;
+---
+
+<BaseLayout title={`${cfg.name} ${TITLE_EM} — ${cfg.titleSub}`} subject={subject}>
+  <ProgressBar />
+  <TopBar subject={subject} brand={cfg.brand} brandSub={BRAND_SUB} filters={cfg.filters} />
+  <Hero
+    eyebrow={EYEBROW}
+    titleMain={cfg.name}
+    titleEm={TITLE_EM}
+    titleSub={cfg.titleSub}
+    lede={cfg.hero.lede}
+    src={cfg.hero.src}
+    legend={cfg.hero.legend}
+    flashHref={`/flashcards/${subject}`}
+    howto={cfg.hero.howto}
+  />
+
+  <main class="wrap reading" id="main">
+    <BagianHeader bagian="A" title="Pilihan Ganda" count={aEntries.length} />
+    {aGroups.map((g) => {
+      const ov = cfg.overviewPlates?.[g.topic];
+      return (
+        <>
+          <TopicDivider topic={g.topic} label={cfg.topicLabels[g.topic] ?? g.topic} range={rangeOf(g.items)} />
+          {ov && <OverviewPlates topic={g.topic} title={ov.title} subtitle={ov.subtitle} plates={ov.plates} />}
+          {g.items.map((entry) => <EntryCard entry={entry} />)}
+        </>
+      );
+    })}
+
+    {bEntries.length > 0 && (
+      <>
+        <BagianHeader bagian="B" title="Pilihan Ganda Kompleks" count={bEntries.length} note={NOTE_B} />
+        {bEntries.map((entry) => <EntryCard entry={entry} />)}
+      </>
+    )}
+
+    {cEntries.length > 0 && (
+      <>
+        <BagianHeader bagian="C" title="Isian Singkat" count={cEntries.length} note={cfg.noteC} />
+        {cEntries.map((entry) => <EntryCard entry={entry} />)}
+      </>
+    )}
+
+    <Footer />
+  </main>
+
+  <BackToTop />
+  <Lightbox />
+
+  <script>
+    import '../../scripts/interactive.ts';
+  </script>
+</BaseLayout>

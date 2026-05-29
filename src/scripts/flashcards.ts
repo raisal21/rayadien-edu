@@ -354,7 +354,9 @@ function flipCard() {
 }
 
 function filterDeck(deck: string) {
-  cards = allCards.filter(c => c.data.deck === deck)
+  cards = deck === '__all__'
+    ? allCards.slice()
+    : allCards.filter(c => c.data.deck === deck)
   currentIndex = 0
   isTransitioning = false
   renderStack()
@@ -398,7 +400,11 @@ function loadCards(): Flashcard[] {
 function init() {
   allCards = loadCards()
   const deckSelect = document.getElementById('deck') as HTMLSelectElement
-  cards = allCards.filter(c => c.data.deck === deckSelect.value)
+
+  // default = first option ("Semua kartu") → shows every card for the subject
+  cards = deckSelect.value === '__all__'
+    ? allCards.slice()
+    : allCards.filter(c => c.data.deck === deckSelect.value)
 
   renderStack()
   initKeyboard()
