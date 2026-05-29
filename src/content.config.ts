@@ -5,7 +5,7 @@ import { glob } from 'astro/loaders';
 const entries = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/entries' }),
   schema: z.object({
-    subject: z.enum(['biologi', 'sejarah', 'ekonomi', 'geografi', 'ppkn']),
+    subject: z.enum(['biologi', 'sejarah', 'ekonomi', 'geografi', 'ppkn', 'sosiologi']),
     semester: z.number(),
     // Sub-topic within a subject (free-form): biologi → jamur/eko,
     // sejarah → hindu-buddha/islam, ekonomi → mikro/pembayaran/lembaga, etc.
