@@ -5,7 +5,11 @@ import { glob } from 'astro/loaders';
 const entries = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/entries' }),
   schema: z.object({
-    topic: z.enum(['jamur', 'eko']),
+    subject: z.enum(['biologi', 'sejarah', 'ekonomi', 'geografi', 'ppkn']),
+    semester: z.number(),
+    // Sub-topic within a subject (free-form): biologi → jamur/eko,
+    // sejarah → hindu-buddha/islam, ekonomi → mikro/pembayaran/lembaga, etc.
+    topic: z.string(),
     bagian: z.enum(['A', 'B', 'C']),
     type: z.enum(['pg', 'pg-kompleks', 'isian']),
     nomor: z.number(),

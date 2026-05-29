@@ -12,7 +12,7 @@ import Footer from '../components/Footer.astro';
 import BackToTop from '../components/BackToTop.astro';
 import Lightbox from '../components/Lightbox.astro';
 
-const allEntries = await getCollection('entries');
+const allEntries = (await getCollection('entries')).filter(e => e.data.subject === 'biologi');
 
 const bagianA = allEntries.filter(e => e.data.bagian === 'A').sort((a, b) => a.data.nomor - b.data.nomor);
 const bagianB = allEntries.filter(e => e.data.bagian === 'B').sort((a, b) => a.data.nomor - b.data.nomor);

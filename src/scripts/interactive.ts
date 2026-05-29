@@ -27,8 +27,7 @@ function topicOf(el: Element): string { return (el as HTMLElement).dataset.topic
 function applyFilter(f: string) {
   items.forEach(e => e.classList.toggle('hidden', f !== 'all' && topicOf(e) !== f));
   dividers.forEach(d => {
-    const dj = d.classList.contains('j') ? 'jamur' : 'eko';
-    d.classList.toggle('hidden', f !== 'all' && dj !== f);
+    d.classList.toggle('hidden', f !== 'all' && topicOf(d) !== f);
   });
 }
 

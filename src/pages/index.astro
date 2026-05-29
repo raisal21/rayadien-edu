@@ -16,7 +16,11 @@ const defaultSem = '2';
 // availability[semester][subjectId] = { href, meta }
 const availability: Record<string, Record<string, { href: string; meta: string }>> = {
   '2': {
-    biologi: { href: '/biologi', meta: 'Bank soal · Flashcards' },
+    sejarah:  { href: '/sejarah',  meta: 'Bank soal · 40 soal' },
+    biologi:  { href: '/biologi',  meta: 'Bank soal · Flashcards' },
+    ekonomi:  { href: '/ekonomi',  meta: 'Bank soal · 35 soal' },
+    ppkn:     { href: '/ppkn',     meta: 'Bank soal · 40 soal' },
+    geografi: { href: '/geografi', meta: 'Bank soal · 35 soal' },
   },
 };
 ---

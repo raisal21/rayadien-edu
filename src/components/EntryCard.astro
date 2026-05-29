@@ -5,7 +5,9 @@ interface Props {
   entry: {
     id: string;
     data: {
-      topic: 'jamur' | 'eko';
+      subject: 'biologi' | 'sejarah' | 'ekonomi' | 'geografi' | 'ppkn';
+      semester: number;
+      topic: string;
       bagian: 'A' | 'B' | 'C';
       type: 'pg' | 'pg-kompleks' | 'isian';
       nomor: number;
@@ -19,11 +21,30 @@ interface Props {
   };
 }
 
+// Display label per sub-topic. Unknown topics fall back to a title-cased slug.
+const TOPIC_LABELS: Record<string, string> = {
+  jamur: 'Jamur',
+  eko: 'Ekosistem',
+  'hindu-buddha': 'Hindu-Buddha',
+  islam: 'Islam',
+  mikro: 'Mikroekonomi',
+  pembayaran: 'Sistem Pembayaran',
+  lembaga: 'Lembaga Keuangan',
+  hidrosfer: 'Hidrosfer',
+  'peta-pj': 'Peta & PJ',
+  'warga-negara': 'Warga Negara',
+  hankam: 'Pertahanan & Keamanan',
+  'hubungan-internasional': 'Hubungan Internasional',
+  pancasila: 'Nilai Pancasila',
+};
+
 const { entry } = Astro.props;
 const { data } = entry;
 const qnum = `${data.bagian}${data.nomor}`;
 const hasImage = !!data.image;
-const topicLabel = data.topic === 'jamur' ? 'Jamur' : 'Ekosistem';
+const topicLabel =
+  TOPIC_LABELS[data.topic] ??
+  data.topic.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 const { Content } = await render(entry);
 ---

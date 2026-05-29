@@ -1331,3 +1331,86 @@ figure.diagram figcaption b {
     scroll-behavior: auto;
   }
 }
+
+/* ── Multi-subject topic tones ──
+   biologi (jamur/eko) keeps its bespoke blocks above. Other subjects'
+   topics map onto a small earthy palette; reused across subjects since
+   only one subject renders per page. */
+
+/* gold — hindu-buddha, pancasila */
+.entry[data-topic="hindu-buddha"],
+.entry[data-topic="pancasila"] {
+  --accent-local: #a9762f;
+  --accent-bg-local: rgba(187, 134, 56, 0.12);
+  --accent-soft-local: rgba(187, 134, 56, 0.3);
+}
+.topicdivider[data-topic="hindu-buddha"],
+.topicdivider[data-topic="pancasila"] { color: #8c601f; }
+.topicdivider[data-topic="hindu-buddha"] .tk,
+.topicdivider[data-topic="pancasila"] .tk {
+  border-color: rgba(187, 134, 56, 0.3);
+  background: rgba(187, 134, 56, 0.12);
+}
+
+/* teal — islam, hubungan-internasional */
+.entry[data-topic="islam"],
+.entry[data-topic="hubungan-internasional"] {
+  --accent-local: #2f7d74;
+  --accent-bg-local: rgba(47, 125, 116, 0.09);
+  --accent-soft-local: rgba(47, 125, 116, 0.24);
+}
+.topicdivider[data-topic="islam"],
+.topicdivider[data-topic="hubungan-internasional"] { color: #266a62; }
+.topicdivider[data-topic="islam"] .tk,
+.topicdivider[data-topic="hubungan-internasional"] .tk {
+  border-color: rgba(47, 125, 116, 0.24);
+  background: rgba(47, 125, 116, 0.09);
+}
+
+/* indigo — mikro, hidrosfer, warga-negara */
+.entry[data-topic="mikro"],
+.entry[data-topic="hidrosfer"],
+.entry[data-topic="warga-negara"] {
+  --accent-local: #46618f;
+  --accent-bg-local: rgba(70, 97, 143, 0.09);
+  --accent-soft-local: rgba(70, 97, 143, 0.24);
+}
+.topicdivider[data-topic="mikro"],
+.topicdivider[data-topic="hidrosfer"],
+.topicdivider[data-topic="warga-negara"] { color: #3c537b; }
+.topicdivider[data-topic="mikro"] .tk,
+.topicdivider[data-topic="hidrosfer"] .tk,
+.topicdivider[data-topic="warga-negara"] .tk {
+  border-color: rgba(70, 97, 143, 0.24);
+  background: rgba(70, 97, 143, 0.09);
+}
+
+/* clay — pembayaran, peta-pj */
+.entry[data-topic="pembayaran"],
+.entry[data-topic="peta-pj"] {
+  --accent-local: #b06a3c;
+  --accent-bg-local: rgba(176, 106, 60, 0.1);
+  --accent-soft-local: rgba(176, 106, 60, 0.26);
+}
+.topicdivider[data-topic="pembayaran"],
+.topicdivider[data-topic="peta-pj"] { color: #985832; }
+.topicdivider[data-topic="pembayaran"] .tk,
+.topicdivider[data-topic="peta-pj"] .tk {
+  border-color: rgba(176, 106, 60, 0.26);
+  background: rgba(176, 106, 60, 0.1);
+}
+
+/* plum — lembaga, hankam */
+.entry[data-topic="lembaga"],
+.entry[data-topic="hankam"] {
+  --accent-local: #8a4f6d;
+  --accent-bg-local: rgba(138, 79, 109, 0.1);
+  --accent-soft-local: rgba(138, 79, 109, 0.26);
+}
+.topicdivider[data-topic="lembaga"],
+.topicdivider[data-topic="hankam"] { color: #76425d; }
+.topicdivider[data-topic="lembaga"] .tk,
+.topicdivider[data-topic="hankam"] .tk {
+  border-color: rgba(138, 79, 109, 0.26);
+  background: rgba(138, 79, 109, 0.1);
+}

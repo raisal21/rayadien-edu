@@ -1,0 +1,103 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProgressBar from '../components/ProgressBar.astro';
+import TopBar from '../components/TopBar.astro';
+import Hero from '../components/Hero.astro';
+import EntryCard from '../components/EntryCard.astro';
+import BagianHeader from '../components/BagianHeader.astro';
+import TopicDivider from '../components/TopicDivider.astro';
+import Footer from '../components/Footer.astro';
+import BackToTop from '../components/BackToTop.astro';
+import Lightbox from '../components/Lightbox.astro';
+
+const entries = (await getCollection('entries')).filter(e => e.data.subject === 'ppkn');
+const byBagian = (b: string) =>
+  entries.filter(e => e.data.bagian === b).sort((a, c) => a.data.nomor - c.data.nomor);
+
+const aEntries = byBagian('A');
+const aGroups: { topic: string; items: typeof aEntries }[] = [];
+for (const e of aEntries) {
+  let g = aGroups.find(x => x.topic === e.data.topic);
+  if (!g) { g = { topic: e.data.topic, items: [] }; aGroups.push(g); }
+  g.items.push(e);
+}
+
+const bEntries = byBagian('B');
+const cEntries = byBagian('C');
+
+const TOPIC_LABEL: Record<string, string> = {
+  'warga-negara': 'Topik 1 · Warga Negara',
+  hankam: 'Topik 2 · Pertahanan & Keamanan',
+  'hubungan-internasional': 'Topik 3 · Hubungan Internasional',
+  pancasila: 'Topik 4 · Pancasila & Pembangunan',
+};
+const rangeOf = (items: typeof aEntries) =>
+  `No. ${items[0]?.data.nomor}–${items[items.length - 1]?.data.nomor}`;
+---
+
+<BaseLayout title="PPKn Kelas X — Warga Negara, Bela Negara & Hubungan Internasional">
+  <ProgressBar />
+  <TopBar
+    subject="ppkn"
+    brand="PPKn X"
+    brandSub="Kisi-Kisi ASAT"
+    filters={[
+      { value: 'all', label: 'Semua' },
+      { value: 'warga-negara', label: 'Warga Negara' },
+      { value: 'hankam', label: 'Hankam' },
+      { value: 'hubungan-internasional', label: "Hub. Int'l" },
+      { value: 'pancasila', label: 'Pancasila' },
+    ]}
+  />
+  <Hero
+    eyebrow="Materi Belajar &middot; ASAT Genap 2025/2026"
+    titleMain="PPKn"
+    titleEm="Kelas X"
+    titleSub="Warga Negara, Bela Negara & Hubungan Internasional"
+    lede="Catatan ringkas untuk asesmen akhir tahun &mdash; disusun mengikuti <b>kisi-kisi</b>: kewarganegaraan, sistem pertahanan-keamanan, hubungan internasional, serta nilai Pancasila dalam pembangunan."
+    src="Sumber: rangkuman materi Pendidikan Pancasila SMA &mdash; selaraskan dengan catatan & buku pegangan kelas."
+    legend={[
+      { cls: 'n', label: 'Warga Negara' },
+      { cls: 'n', label: 'Hub. Internasional' },
+      { cls: 'n', label: '40 soal &middot; A 25 &middot; B 10 &middot; C 5' },
+    ]}
+    flashHref={false}
+    howto="<b>Cara pakai:</b> baca <em>indikator</em> &#x2192; pahami <em>inti materi</em> &#x2192; buka <em>trik jawab</em>. Pakai tombol topik di atas untuk fokus, atau ketik di kotak <em>cari</em>."
+  />
+
+  <main class="wrap reading" id="main">
+    <BagianHeader bagian="A" title="Pilihan Ganda" count={aEntries.length} />
+    {aGroups.map(g => (
+      <>
+        <TopicDivider topic={g.topic} label={TOPIC_LABEL[g.topic] ?? g.topic} range={rangeOf(g.items)} />
+        {g.items.map(entry => <EntryCard entry={entry} />)}
+      </>
+    ))}
+
+    <BagianHeader
+      bagian="B"
+      title="Pilihan Ganda Kompleks"
+      count={bEntries.length}
+      note="⚠️ PG Kompleks = <u>jawaban benar bisa lebih dari satu</u>. Centang <strong>semua</strong> yang tepat, jangan berhenti di satu."
+    />
+    {bEntries.map(entry => <EntryCard entry={entry} />)}
+
+    <BagianHeader
+      bagian="C"
+      title="Isian Singkat"
+      count={cEntries.length}
+      note="✍️ Isian singkat = jawab <strong>ringkas & tepat</strong> (istilah/nama/dasar hukum)."
+    />
+    {cEntries.map(entry => <EntryCard entry={entry} />)}
+
+    <Footer />
+  </main>
+
+  <BackToTop />
+  <Lightbox />
+
+  <script>
+    import '../scripts/interactive.ts';
+  </script>
+</BaseLayout>
